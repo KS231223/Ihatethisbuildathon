@@ -53,10 +53,18 @@ from scope_lookup import (
     normalise_file,
 )
 from skip_rules import NON_CODE
+import gzip
+import json
+from pathlib import Path
 
+
+def load_gzip(path):
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return json.load(f)
+    
 TEST_DEPENDENCIES_FILE = GRAPH_DIR / "test_dependencies.json"
 REVERSE_GRAPH_FILE = GRAPH_DIR / "reverse_graph.json"
-TEST_MAP_FILE = GRAPH_DIR / "test_map.json"
+TEST_MAP_FILE = GRAPH_DIR / "test_map.json.gz"
 DIALECT_TESTS_FILE = GRAPH_DIR / "dialect_to_tests.json"
 
 FIXTURE_TESTS_FILE = GRAPH_DIR / "fixture_to_tests.json"
@@ -264,7 +272,7 @@ class Selector:
         """tests: {test_id: {"number": int, "file": str}}  (e.g. from tests.json)"""
         self.idx = LineIndex()
         self.definitions = self.idx.definitions
-        self.symbol_tests = load_json(SYMBOL_TESTS_FILE)
+        self.symbol_tests = load_gzip(SYMBOL_TESTS_FILE)
         self.dialect_tests = (
             load_json(DIALECT_TESTS_FILE)
             if DIALECT_TESTS_FILE.exists()
@@ -671,7 +679,7 @@ def main():
     if not args.changes and not args.git_diff and not args.patch:
         ap.error("give file:line arguments, --git-diff REF or --patch FILE")
 
-    test_map = load_json(TEST_MAP_FILE)["tests"]
+    test_map = load_gzip(TEST_MAP_FILE)["tests"]
     tests = {tid: {"number": m.get("number"), "file": m.get("file")} for tid, m in test_map.items()}
 
     sel = Selector(

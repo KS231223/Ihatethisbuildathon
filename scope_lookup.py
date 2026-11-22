@@ -25,6 +25,12 @@ import ast
 import bisect
 import json
 from pathlib import Path
+import gzip
+
+
+def load_gzip(path):
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return json.load(f)
 
 BASE_DIR = Path(__file__).resolve().parent
 GRAPH_DIR = BASE_DIR / "code_graph"
@@ -32,7 +38,7 @@ GRAPH_DIR = BASE_DIR / "code_graph"
 DEFINITIONS_FILE = GRAPH_DIR / "definitions_by_name.json"
 INDEX_FILE = GRAPH_DIR / "line_index.json"
 STATEMENT_INDEX_FILE = GRAPH_DIR / "statement_index.json"
-SYMBOL_TESTS_FILE = GRAPH_DIR / "symbol_to_tests.json"
+SYMBOL_TESTS_FILE = GRAPH_DIR / "symbol_to_tests.json.gz"
 MODULE_TESTS_FILE = GRAPH_DIR / "module_to_tests.json"            # module's OWN tests (narrow)
 MODULE_TOUCH_TESTS_FILE = GRAPH_DIR / "module_to_all_tests.json"  # every test touching the module (wide)
 STATEMENT_TESTS_FILE = GRAPH_DIR / "statement_to_tests.json"
@@ -338,7 +344,7 @@ def query(file, line):
             if MODULE_TESTS_FILE.exists():
                 tests = load_json(MODULE_TESTS_FILE).get(result["module"], [])
         else:
-            tests = load_json(SYMBOL_TESTS_FILE).get(result["scope"], [])
+            tests = load_gzip(SYMBOL_TESTS_FILE).get(result["scope"], [])
     if tests is not None:
         result["tests_at_scope_level"] = tests
     print(json.dumps(result, indent=2))
